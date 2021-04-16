@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <base target="_top">
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <title>Load template</title>
+
+    <!--SCRIPT TO OPEN PICKER -->
+    <script>
+        //YOU CAN SET UP YOUR OWN API CALLS IF YOU WISH, BY CHANGING THIS KEY
+        var DEVELOPER_KEY = 'AIzaSyCo3IuuMVFW1UjsiYHXJeBTbcMKCFtLBRY';
+        var DIALOG_DIMENSIONS = {width: 600, height: 425};
+        var pickerApiLoaded = false;
+
+        /**
+         * Loads the Google Picker API.
+         */
+        function onApiLoad() {
+            gapi.load('picker', {'callback': function() {
+                    pickerApiLoaded = true;
+                }});
+        }
+
+        /**
+         * Gets the user's OAuth 2.0 access token from the server-side script so that
+         * it can be passed to Picker. This technique keeps Picker from needing to
+         * show its own authorization dialog, but is only possible if the OAuth scope
+         * that Picker needs is available in Apps Script. Otherwise, your Picker code
+         * will need to declare its own OAuth scopes.
+         */
+        function getOAuthToken() {
+            console.log("Getting OAuthToken....")
+
+            google.script.run.withSuccessHandler(createPicker)
+                .withFailureHandler(showError).getOAuthToken();
+        }
+
+        function getFolderOAuthToken() {
+            console.log("Getting OAuthToken....")
+
+            google.script.run.withSuccessHandler(createFolderPicker)
+                .withFailureHandler(showError).getOAuthToken();
+        }
+
+        /**
+         * Creates a Picker that can access the user's spreadsheets. This function
+         * uses advanced options to hide the Picker's left navigation panel and
+         * default title bar.
+         *
+         * @param {string} token An OAuth 2.0 access token that lets Picker access the
+         *     file type specified in the addView call.
+         */
+        function createPicker(token) {
+            if (pickerApiLoaded && token) {
+                var picker = new google.picker.PickerBuilder()
+                    // Instruct Picker to display only DOCUMENTS in Drive. For other
+                    // views, see https://developers.google.com/picker/docs/#otherviews
+                    .addView(google.picker.ViewId.DOCUMENTS)
+                    // Hide the navigation panel so that Picker fills more of the dialog.
+                    .enableFeature(google.picker.Feature.NAV_HIDDEN)
+                    // Hide the title bar since an Apps Script dialog already has a title.
+                    .hideTitleBar()
+                    .setOAuthToken(token)
+                    .setDeveloperKey(DEVELOPER_KEY)
+                    .setCallback(pickerCallback)
+                    .setOrigin(google.script.host.origin)
+                    // Instruct Picker to fill the dialog, minus 2 pixels for the border.
+                    .setSize(DIALOG_DIMENSIONS.width - 2,
+                        DIALOG_DIMENSIONS.height - 2)
+                    .build();
+                picker.setVisible(true);
+            } else {
+                showError('Unable to load the file picker.');
+            }
+        }
+
+        function createFolderPicker(token) {
+            if (pickerApiLoaded && token) {
+                var foldersView = new google.picker.DocsView()
+                    .setIncludeFolders(true)
+                    .setMimeTypes('application/vnd.google-apps.folder')
+                    .setSelectFolderEnabled(true);
+
+                var picker = new google.picker.PickerBuilder()
+                    // Instruct Picker to display only DOCUMENTS in Drive. For other
+                    // views, see https://developers.google.com/picker/docs/#otherviews
+                    .addView(foldersView)
+                    // Hide the navigation panel so that Picker fills more of the dialog.
+                    .enableFeature(google.picker.Feature.NAV_HIDDEN)
+                    // Hide the title bar since an Apps Script dialog already has a title.
+                    .hideTitleBar()
+                    .setOAuthToken(token)
+                    .setDeveloperKey(DEVELOPER_KEY)
+                    .setCallback(folderPickerCallback)
+                    .setOrigin(google.script.host.origin)
+                    // Instruct Picker to fill the dialog, minus 2 pixels for the border.
+                    .setSize(DIALOG_DIMENSIONS.width - 2,
+                        DIALOG_DIMENSIONS.height - 2)
+                    .build();
+                picker.setVisible(true);
+            } else {
+                showError('Unable to load the folder picker.');
+            }
+        }
+
+        /**
+         * A callback function that extracts the chosen document's metadata from the
+         * response object. For details on the response object, see
+         * https://developers.google.com/picker/docs/result
+         *
+         * @param {object} data The response object.
+         */
+        function pickerCallback(data) {
+            console.log(data)
+
+            var action = data[google.picker.Response.ACTION];
+
+            const input = $($("#id")[0])
+
+            if (action == google.picker.Action.PICKED) {
+                var document = data["docs"][0];
+                var id = document.id;
+                var url = document.url;
+                var name = document.name;
+
+                input.val(id)
+                $("#result").html(`<span>You chose <b>${name}</b> as a template.</span>`)
+            } else if (action == google.picker.Action.CANCEL) {
+                input.val("")
+                $("#result").html("")
+            }
+
+            checkForm()
+        }
+
+        function folderPickerCallback(data) {
+            console.log(data)
+
+            var action = data[google.picker.Response.ACTION];
+
+            console.log(action)
+
+            const input = $($("#folder-id")[0])
+
+            if (action == google.picker.Action.PICKED) {
+                var folder = data["docs"][0];
+                var id = folder.id;
+                var url = folder.url;
+                var name = folder.name;
+
+                input.val(id)
+                $("#folder-result").html(`<span>You chose <b>${name}</b> as a folder to save your document.</span>`)
+            } else if (action == google.picker.Action.CANCEL) {
+                input.val("")
+                $("#folder-result").html("")
+            }
+
+            checkForm()
+        }
+
+        function checkForm() {
+            console.log("CHECKING FORM")
+
+            const button = $($('#access-button')[0])
+            const name = $($("#document-name")[0])
+            const id = $($("#id")[0])
+            const folder_id = $($("#folder-id")[0])
+
+            if (name.val() !== "" && id.val() !== "" && folder_id.val() !== "") {
+                button.prop("disabled", false)
+            } else {
+                button.prop("disabled", true)
+            }
+        }
+
+        /**
+         * Displays an error message within the #result element.
+         *
+         * @param {string} message The error message to display.
+         */
+        function showError(message) {
+            runToast("error", 'Error: ' + message)
+
+            $($('#access-button')[0]).prop("disabled", false)
+        }
+
+        function accessTemplateTransformation() {
+            $($('#access-button')[0]).prop("disabled", true)
+
+            const id = $($("#id")[0]).val()
+            const folder_id = $($("#folder-id")[0]).val()
+            const name = $($("#document-name")).val()
+
+            console.log(id)
+            console.log(folder_id)
+            console.log(name)
+
+            google.script.run.withFailureHandler(showError).fillTemplateSidebar(name, id, folder_id)
+        }
+    </script>
+
+    <style>
+        .branding-below {
+            bottom: 56px;
+            top: 0;
+        }
+
+        .w-100 {
+            width: 100%
+        }
+
+        .w-75 {
+            width: 75%
+        }
+
+        .w-50 {
+            width: 50%
+        }
+
+        .w-25 {
+            width: 25%
+        }
+
+        .toast {
+            width: 100%;
+            text-align: center;
+            padding: 7px 0;
+        }
+
+        .toast-success {
+            background-color: #3d9400;
+            color: white
+        }
+
+        .toast-error {
+            background-color: #dd4b39;
+            color: white
+        }
+    </style>
+
+    <!-- HELP FUNCTIONS -->
+    <script>
+        function runToast(type, msg) {
+            const result = document.getElementById("toast")
+            const container = document.getElementById("toast-container")
+            changeDisplay(container)
+            result.className = "toast toast-" + type
+            result.textContent = msg
+            setTimeout(() => { changeDisplay(container) }, 3000)
+        }
+
+        function changeDisplay(div) {
+            if (div.style.display === "none") {
+                div.style.display = "block";
+            } else {
+                div.style.display = "none";
+            }
+        }
+    </script>
+</head>
+
+<body>
+<div class="sidebar branding-below">
+    <div id="toast-container" class="block" style="display: none">
+        <div id="toast">
+
+        </div>
+    </div>
+    <div class="block form-group">
+        <label><b>Document's name</b></label>
+        <input type="text" id="document-name" placeholder="Enter the document's name" required onchange="checkForm()"/>
+    </div>
+    <div class="block form-group">
+        <label><b>Document's template</b></label><br/>
+        <button  onclick="getOAuthToken()">
+            Select a template
+        </button>
+        <p id="result"></p>
+    </div>
+    <div class="block form-group">
+        <label><b>Document's folder</b></label><br/>
+        <button  onclick="getFolderOAuthToken()">
+            Select a folder
+        </button>
+        <p id="folder-result"></p>
+    </div>
+    <div class="block form-group" style="display: none">
+        <input id="id" name="id" disabled />
+        <input id="folder-id" name="folder-id" disabled />
+    </div>
+    <div class="block">
+        <button class="blue" id="access-button" onclick="accessTemplateTransformation()" disabled>
+            Access template transformation
+        </button>
+    </div>
+</div>
+
+<div class="sidebar bottom">
+    <span class="gray">Made with love by Ambroise Mullie</span>
+</div>
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous">
+</script>
+<script src="https://apis.google.com/js/api.js?onload=onApiLoad">
+</script>
+</body>
+
+</html>

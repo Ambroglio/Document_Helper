@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <title>Fill template</title>
+
+    <style>
+        .branding {
+            bottom: 66px;
+            top: 80px;
+        }
+
+        .w-100 {
+            width: 100%
+        }
+
+        .w-75 {
+            width: 75%
+        }
+
+        .w-50 {
+            width: 50%
+        }
+
+        .w-25 {
+            width: 25%
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toast {
+            width: 100%;
+            text-align: center;
+            padding: 7px 0;
+        }
+
+        .toast-success {
+            background-color: #3d9400;
+            color: white
+        }
+
+        .toast-error {
+            background-color: #dd4b39;
+            color: white
+        }
+
+        .sidebar-top {
+            height: 80px;
+        }
+    </style>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous">
+    </script>
+    </script>
+
+    <!-- Creating the form.... -->
+    <script>
+        $(function() {
+            const id = $("#id").text()
+
+            google.script.run
+                .withFailureHandler(showError)
+                .withSuccessHandler(showForm)
+                .getInfo(id)
+        })
+
+        /**
+         * Displays an error message within the #result element.
+         *
+         * @param {string} message The error message to display.
+         */
+        function showError(message) {
+            runToast("error", 'Error: ' + message)
+
+            $("#cancel-button").prop("disabled", false)
+            $("#transform-button").prop("disabled", false)
+        }
+
+        function runToast(type, msg) {
+            const result = document.getElementById("toast")
+            const container = document.getElementById("toast-container")
+            changeDisplay(container)
+            result.className = "toast toast-" + type
+            result.textContent = msg
+            setTimeout(() => { changeDisplay(container) }, 3000)
+        }
+
+        function changeDisplay(div) {
+            if (div.style.display === "none") {
+                div.style.display = "block";
+            } else {
+                div.style.display = "none";
+            }
+        }
+
+        function showForm(fields) {
+            console.log(fields)
+
+            for (field of fields) {
+                $("#fields").append(
+                    $(`
+          <div class="block form-group">
+            <p><b>Insert ${field}</b></p>
+            <textarea rows="1" value="" name="${field}" id="field-${field}" class="w-100" />
+          </div>
+          `)
+                )
+            }
+
+            $("#transform-button").prop("disabled", false)
+        }
+
+        function transform(event) {
+            event.preventDefault()
+
+            $("#cancel-button").prop("disabled", true)
+            $("#transform-button").prop("disabled", true)
+
+            const object = {}
+
+            const textareas = document.getElementsByTagName("textarea")
+
+            console.log(textareas)
+
+            for (textarea of textareas) {
+                object[textarea.name] = textarea.value
+            }
+
+            const id = $("#id").text()
+            const folder_id = $("#folder_id").text()
+            const name = $("#name").text()
+
+            console.log(id)
+            console.log(object)
+
+            console.log("Starting to transform...")
+
+            google.script.run
+                .withFailureHandler(showError)
+                .withSuccessHandler(confirmCreation)
+                .copyFromTemplate(name, id, folder_id, object)
+        }
+
+        function confirmCreation(url) {
+            console.log(url)
+
+            google.script.run
+                .withFailureHandler(showError)
+                .successSidebar(url)
+        }
+
+        function loadAnother() {
+            google.script.run
+                .withFailureHandler(showError)
+                .loadTemplateSidebar()
+        }
+    </script>
+</head>
+
+<body>
+<form onsubmit="transform(event)">
+    <div class="sidebar top sidebar-top">
+        <p style="margin: 0">You will create <b><?= name ?></b> from template <b><?= template_name ?></b> in folder <b><?= folder_name ?></b>.</p>
+    </div>
+
+    <div class="sidebar branding">
+        <div class="hidden" id="id"><?= id ?></div>
+        <div class="hidden" id="name"><?= name ?></div>
+        <div class="hidden" id="folder_id"><?= folder_id ?></div>
+
+        <div id="toast-container" class="block" style="display: none">
+            <div id="toast">
+
+            </div>
+        </div>
+        <div id="fields">
+
+        </div>
+    </div>
+
+    <div class="sidebar bottom">
+        <div class="block" id="block-submit">
+            <button id="transform-button" class="blue" type="submit" disabled>Transform</button>
+            <button id="cancel-button" onclick="loadAnother()">Cancel</button>
+        </div>
+        <span class="gray">Made with love by Ambroise Mullie</span>
+    </div>
+</form>
+</body>
+
+</html>

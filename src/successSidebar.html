@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <title>Template Creation Success</title>
+
+    <style>
+        .branding {
+            bottom: 66px;
+            top: 0px;
+        }
+
+        .w-100 {
+            width: 100%
+        }
+
+        .w-75 {
+            width: 75%
+        }
+
+        .w-50 {
+            width: 50%
+        }
+
+        .w-25 {
+            width: 25%
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toast {
+            width: 100%;
+            text-align: center;
+            padding: 7px 0;
+        }
+
+        .toast-success {
+            background-color: #3d9400;
+            color: white
+        }
+
+        .toast-error {
+            background-color: #dd4b39;
+            color: white
+        }
+
+        .sidebar-top {
+            height: 80px;
+        }
+    </style>
+
+    <script>
+        function generate() {
+            google.script.run.loadTemplateSidebar()
+        }
+    </script>
+</head>
+
+<body>
+<div class="sidebar branding-below">
+    <div class="block">
+        <p>The document has been successfully generated.</p>
+        <p>You can find it <a href="<?= url?>">here</a> (<b>open it in a new tab !</b>).</p>
+    </div>
+    <div class="block" id="block-submit">
+        <button id="transform-button" onClick="generate()"class="blue" type="submit">Generate another document</button>
+    </div>
+</div>
+<div class="sidebar bottom">
+    <span class="gray">Made with love by Ambroise Mullie</span>
+</div>
+</body>
+
+</html>
