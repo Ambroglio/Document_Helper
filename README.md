@@ -15,6 +15,10 @@ I will then explain how to deploy it as easily as possible in a test version.
 
 ## How to deploy Add-On in test mode ?
 
+### Clone the repository
+
+First, clone this repository with Git 
+
 ### Installation of *clasp*
 
 In a command line terminal, type `npm install -g @google/clasp`
