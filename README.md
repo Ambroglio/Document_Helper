@@ -42,7 +42,7 @@ Then type `clasp create --title "Document Helper" --type standalone`
 
 Once created, type `clasp push`
 
-Now you can type `class deploy` in order to make the deployment.
+Now you can type `clasp deploy` in order to make the deployment.
 
 ---
 ### Install Add-on as test
